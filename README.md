@@ -20,6 +20,13 @@ pip install -r requirements.txt
 pip install python-telegram-bot -U --pre
 ```
 
+Необходимо создать файл `.env`. В него следует внести ваши токены для API Девмана и бота, как показано ниже.
+
+```dotenv
+DEVMAN_API_TOKEN=ваштокен
+TELEGRAM_BOT_TOKEN=ваштокен
+```
+
 ## Запуск приложения
 
 Для запуска, находясь в папке приложения введите в терминале комманду:
