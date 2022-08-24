@@ -8,11 +8,11 @@ from telegram import Bot
 
 
 def post_message(bot, response, chat_id):
-    check_results = response["new_attempts"][-1]
-    message = f'''У вас проверили работу "{check_results["lesson_title"]}".
-    Вот ссылка на этот урок: {check_results["lesson_url"]}.\n'''
+    check_result = response["new_attempts"][-1]
+    message = f'''У вас проверили работу "{check_result["lesson_title"]}".
+    Вот ссылка на этот урок: {check_result["lesson_url"]}.\n'''
 
-    if check_results['is_negative']:
+    if check_result['is_negative']:
         message += '\nК сожалению в работе нашлись ошибки'
     else:
         message += '\nПреподавателю всё понравилось! Можете приступать к следующему уроку'
