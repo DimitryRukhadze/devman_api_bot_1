@@ -1,6 +1,7 @@
 import requests
 
 from contextlib import suppress
+from time import sleep
 
 from environs import Env
 from telegram import Bot
@@ -34,24 +35,29 @@ def main():
     user_chat_id=env('USER_CHAT_ID')
 
     bot = Bot(token=env('TELEGRAM_BOT_TOKEN'))
+    connection_retry = 0
 
     while True:
-        with suppress(requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError):
+        with suppress(requests.exceptions.ReadTimeout):
             params = {
                 'timestamp': ''
             }
-            response = requests.get(devman_long_polling_url, headers=headers, params=params)
-            response.raise_for_status()
+            try:
+                response = requests.get(devman_long_polling_url, headers=headers, params=params)
+                response.raise_for_status()
 
-            decoded_response = response.json()
+                decoded_response = response.json()
 
-            if decoded_response['status'] == 'found':
-                params['timestamp'] = decoded_response['new_attempts'][-1]['timestamp']
-                post_message(bot, decoded_response, user_chat_id)
+                if decoded_response['status'] == 'found':
+                    params['timestamp'] = decoded_response['new_attempts'][-1]['timestamp']
+                    post_message(bot, decoded_response, user_chat_id)
 
-            else:
-                params['timestamp'] = decoded_response['timestamp_to_request']
-
+                else:
+                    params['timestamp'] = decoded_response['timestamp_to_request']
+            except requests.exceptions.ConnectionError:
+                connection_retry += 1
+                if connection_retry > 10:
+                    sleep(60)
 
 if __name__ == '__main__':
     main()
