@@ -1,13 +1,12 @@
 import requests
 
 from contextlib import suppress
+
 from environs import Env
-
-import asyncio
-import telegram
+from telegram import Bot
 
 
-async def post_message(bot, response):
+def post_message(bot, response, chat_id):
     check_results = response["new_attempts"][-1]
     message = f'''У вас проверили работу "{check_results["lesson_title"]}".
     Вот ссылка на этот урок: {check_results["lesson_url"]}.\n'''
@@ -17,15 +16,13 @@ async def post_message(bot, response):
     else:
         message += '\nПреподавателю всё понравилось! Можете приступать к следующему уроку'
 
-    async with bot:
-        chat_id = (await bot.get_updates())[-1].message.chat_id
-        await bot.send_message(
-            chat_id=chat_id,
-            text=message
-        )
+    bot.send_message(
+        chat_id=chat_id,
+        text=message
+    )
 
 
-async def main():
+def main():
     env = Env()
     env.read_env()
 
@@ -33,7 +30,10 @@ async def main():
     headers = {
         'Authorization': f"Token {env('DEVMAN_API_TOKEN')}"
     }
-    bot = telegram.Bot(env('TELEGRAM_BOT_TOKEN'))
+
+    user_chat_id=env('USER_CHAT_ID')
+
+    bot = Bot(token=env('TELEGRAM_BOT_TOKEN'))
 
     while True:
         with suppress(requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError):
@@ -46,11 +46,12 @@ async def main():
             decoded_response = response.json()
 
             if decoded_response['status'] == 'found':
-                await post_message(bot, decoded_response)
+                params['timestamp'] = decoded_response['new_attempts'][-1]['timestamp']
+                post_message(bot, decoded_response, user_chat_id)
 
             else:
                 params['timestamp'] = decoded_response['timestamp_to_request']
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()
