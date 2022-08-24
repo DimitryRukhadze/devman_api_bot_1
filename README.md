@@ -25,6 +25,7 @@ pip install python-telegram-bot -U --pre
 ```dotenv
 DEVMAN_API_TOKEN=ваштокен
 TELEGRAM_BOT_TOKEN=ваштокен
+USER_CHAT_ID=ваш telegram chat_id
 ```
 
 ## Запуск приложения
