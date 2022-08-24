@@ -46,14 +46,14 @@ def main():
                 response = requests.get(devman_long_polling_url, headers=headers, params=params)
                 response.raise_for_status()
 
-                decoded_response = response.json()
+                work_check_result = response.json()
 
-                if decoded_response['status'] == 'found':
-                    params['timestamp'] = decoded_response['new_attempts'][-1]['timestamp']
-                    post_message(bot, decoded_response, user_chat_id)
+                if work_check_result['status'] == 'found':
+                    params['timestamp'] = work_check_result['new_attempts'][-1]['timestamp']
+                    post_message(bot, work_check_result, user_chat_id)
 
                 else:
-                    params['timestamp'] = decoded_response['timestamp_to_request']
+                    params['timestamp'] = work_check_result['timestamp_to_request']
             except requests.exceptions.ConnectionError:
                 connection_retry += 1
                 if connection_retry > 10:
