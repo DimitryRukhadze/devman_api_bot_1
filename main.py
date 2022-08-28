@@ -49,7 +49,8 @@ def main():
 
     bot = Bot(token=env('TELEGRAM_BOT_TOKEN'))
 
-    tg_logger = logging.getLogger('Logger')
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    tg_logger = logging.getLogger('tg_logger')
     tg_logger.setLevel(logging.WARNING)
     tg_logger.addHandler(TelegramLogsHandler(bot, user_chat_id))
 
@@ -72,6 +73,7 @@ def main():
 
                 else:
                     params['timestamp'] = work_check_result['timestamp_to_request']
+                    tg_logger.info('Another round!')
             except requests.exceptions.ConnectionError:
                 tg_logger.warning('Disconnected from the internet!')
                 connection_retry += 1
