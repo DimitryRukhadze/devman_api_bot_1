@@ -10,14 +10,14 @@ from telegram import Bot
 
 class TelegramLogsHandler(logging.Handler):
 
-    def __init__(self, bot, chat_id):
+    def __init__(self, tg_bot, tg_chat_id):
         super().__init__()
-        self.chat_id = chat_id
-        self.bot = bot
+        self.chat_id = tg_chat_id
+        self.bot = tg_bot
 
     def emit(self, record):
         log_entry = self.format(record)
-        self.bot.send_message(chat_id=self.chat_id, text=log_entry)
+        return self.bot.send_message(chat_id=self.chat_id, text=log_entry)
 
 
 def post_message(bot, response, chat_id):
@@ -52,10 +52,11 @@ def main():
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     tg_logger = logging.getLogger('tg_logger')
     tg_logger.setLevel(logging.WARNING)
-    tg_logger.addHandler(TelegramLogsHandler(bot, user_chat_id))
+    tg_handler = TelegramLogsHandler(bot, user_chat_id)
+    tg_logger.addHandler(tg_handler)
 
     connection_retry = 0
-    tg_logger.info('Бот запущен!')
+    print(tg_logger.info('Бот запущен!'))
     while True:
         with suppress(requests.exceptions.ReadTimeout):
             params = {
