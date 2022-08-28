@@ -40,7 +40,6 @@ def main():
     env = Env()
     env.read_env()
 
-
     devman_long_polling_url = 'https://dvmn.org/api/long_polling/'
     headers = {
         'Authorization': f"Token {env('DEVMAN_API_TOKEN')}"
@@ -55,7 +54,7 @@ def main():
     tg_logger.addHandler(TelegramLogsHandler(bot, user_chat_id))
 
     connection_retry = 0
-
+    tg_logger.info('Бот запущен!')
     while True:
         with suppress(requests.exceptions.ReadTimeout):
             params = {
