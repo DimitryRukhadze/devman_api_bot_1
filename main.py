@@ -56,7 +56,7 @@ def main():
     tg_logger.addHandler(tg_handler)
 
     connection_retry = 0
-    print(tg_logger.info('Бот запущен!'))
+    tg_logger.info('Бот запущен!')
     while True:
         with suppress(requests.exceptions.ReadTimeout):
             params = {
