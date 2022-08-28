@@ -8,6 +8,18 @@ from environs import Env
 from telegram import Bot
 
 
+class TelegramLogsHandler(logging.Handler):
+
+    def __init__(self, bot, chat_id):
+        super().__init__()
+        self.chat_id = chat_id
+        self.bot = bot
+
+    def emit(self, record):
+        log_entry = self.format(record)
+        self.bot.send_message(chat_id=self.chat_id, text=log_entry)
+
+
 def post_message(bot, response, chat_id):
     check_result = response["new_attempts"][-1]
     message = f'''У вас проверили работу "{check_result["lesson_title"]}".
@@ -28,8 +40,6 @@ def main():
     env = Env()
     env.read_env()
 
-    logging.basicConfig(level=logging.INFO)
-    logging.info('Бот запущен!')
 
     devman_long_polling_url = 'https://dvmn.org/api/long_polling/'
     headers = {
@@ -39,6 +49,11 @@ def main():
     user_chat_id=env('USER_CHAT_ID')
 
     bot = Bot(token=env('TELEGRAM_BOT_TOKEN'))
+
+    tg_logger = logging.getLogger('Logger')
+    tg_logger.setLevel(logging.WARNING)
+    tg_logger.addHandler(TelegramLogsHandler(bot, user_chat_id))
+
     connection_retry = 0
 
     while True:
@@ -59,6 +74,7 @@ def main():
                 else:
                     params['timestamp'] = work_check_result['timestamp_to_request']
             except requests.exceptions.ConnectionError:
+                tg_logger.warning('Disconnected from the internet!')
                 connection_retry += 1
                 if connection_retry > 10:
                     sleep(60)
