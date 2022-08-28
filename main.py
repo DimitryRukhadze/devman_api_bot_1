@@ -1,4 +1,5 @@
 import requests
+import logging
 
 from contextlib import suppress
 from time import sleep
@@ -26,6 +27,9 @@ def post_message(bot, response, chat_id):
 def main():
     env = Env()
     env.read_env()
+
+    logging.basicConfig(level=logging.INFO)
+    logging.info('Бот запущен!')
 
     devman_long_polling_url = 'https://dvmn.org/api/long_polling/'
     headers = {
