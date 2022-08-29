@@ -17,7 +17,7 @@ class TelegramLogsHandler(logging.Handler):
 
     def emit(self, record):
         log_entry = self.format(record)
-        return self.bot.send_message(chat_id=self.chat_id, text=log_entry)
+        self.bot.send_message(chat_id=self.chat_id, text=log_entry)
 
 
 def post_message(bot, response, chat_id):
@@ -50,13 +50,15 @@ def main():
     bot = Bot(token=env('TELEGRAM_BOT_TOKEN'))
 
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
     tg_logger = logging.getLogger('tg_logger')
-    tg_logger.setLevel(logging.WARNING)
+    tg_logger.setLevel(logging.INFO)
     tg_handler = TelegramLogsHandler(bot, user_chat_id)
     tg_logger.addHandler(tg_handler)
 
     connection_retry = 0
     tg_logger.info('Бот запущен!')
+
     while True:
         with suppress(requests.exceptions.ReadTimeout):
             params = {
@@ -74,7 +76,7 @@ def main():
 
                 else:
                     params['timestamp'] = work_check_result['timestamp_to_request']
-                    tg_logger.info('Another round!')
+
             except requests.exceptions.ConnectionError:
                 tg_logger.warning('Disconnected from the internet!')
                 connection_retry += 1
