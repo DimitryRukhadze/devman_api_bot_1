@@ -29,6 +29,7 @@ def post_message(bot, response, chat_id):
 def main():
     env = Env()
     env.read_env()
+
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
