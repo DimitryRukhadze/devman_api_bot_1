@@ -6,8 +6,10 @@ from time import sleep
 from environs import Env
 from telegram import Bot
 
+import logging_bot
 
-from logging_bot import create_logger
+
+TG_LOGGER = logging.getLogger('tg_logger')
 
 
 def post_message(bot, response, chat_id):
@@ -30,61 +32,63 @@ def main():
     env = Env()
     env.read_env()
 
+    logger_bot = Bot(token=env('LOG_BOT_TOKEN'))
+    admin_chat_id = env('ADMIN_CHAT_ID')
+
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
-    logger_bot = Bot(token=env('LOG_BOT_TOKEN'))
-    admin_chat_id = env('ADMIN_CHAT_ID')
-    tg_logger = create_logger(logger_bot, admin_chat_id)
+    TG_LOGGER.setLevel(logging.INFO)
+    TG_LOGGER.addHandler(logging_bot.TelegramLogsHandler(logger_bot, admin_chat_id))
+
+
+    devman_long_polling_url = 'https://dvmn.org/api/long_polling/'
+    headers = {
+        'Authorization': f"Token {env('DEVMAN_API_TOKEN')}"
+    }
+
+    user_chat_id = env('USER_CHAT_ID')
+    main_bot = Bot(token=env('TELEGRAM_BOT_TOKEN'))
+
+    connection_retry = 0
+    TG_LOGGER.info('Бот запущен!')
 
     while True:
-        try:
-            devman_long_polling_url = 'https://dvmn.org/api/long_polling/'
-            headers = {
-                'Authorization': f"Token {env('DEVMAN_API_TOKEN')}"
+        with suppress(requests.exceptions.ReadTimeout):
+            params = {
+                'timestamp': ''
             }
+            try:
+                response = requests.get(
+                    devman_long_polling_url,
+                    headers=headers,
+                    params=params
+                    )
+                response.raise_for_status()
 
-            user_chat_id = env('USER_CHAT_ID')
-            main_bot = Bot(token=env('TELEGRAM_BOT_TOKEN'))
+                work_check_result = response.json()
 
-            connection_retry = 0
-            tg_logger.info('Бот запущен!')
+                if work_check_result['status'] == 'found':
+                    params['timestamp'] = work_check_result['new_attempts'][-1]['timestamp']
+                    post_message(
+                        main_bot,
+                        work_check_result,
+                        user_chat_id
+                        )
 
-            while True:
-                with suppress(requests.exceptions.ReadTimeout):
-                    params = {
-                        'timestamp': ''
-                    }
-                    try:
-                        response = requests.get(
-                            devman_long_polling_url,
-                            headers=headers,
-                            params=params
-                            )
-                        response.raise_for_status()
+                else:
+                    params['timestamp'] = work_check_result['timestamp_to_request']
 
-                        work_check_result = response.json()
+            except requests.exceptions.ConnectionError:
+                TG_LOGGER.warning('Disconnected from the internet!')
+                connection_retry += 1
+                if connection_retry > 10:
+                    sleep(60)
 
-                        if work_check_result['status'] == 'found':
-                            params['timestamp'] = work_check_result['new_attempts'][-1]['timestamp']
-                            post_message(
-                                main_bot,
-                                work_check_result,
-                                user_chat_id
-                                )
+            except Exception as err:
+                TG_LOGGER.warning('Got traceback!')
+                TG_LOGGER.warning(err)
 
-                        else:
-                            params['timestamp'] = work_check_result['timestamp_to_request']
-
-                    except requests.exceptions.ConnectionError:
-                        tg_logger.warning('Disconnected from the internet!')
-                        connection_retry += 1
-                        if connection_retry > 10:
-                            sleep(60)
-        except Exception as err:
-            tg_logger.warning('Got traceback!')
-            tg_logger.warning(err)
-            continue
 
 if __name__ == '__main__':
     main()
