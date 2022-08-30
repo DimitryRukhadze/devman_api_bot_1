@@ -29,7 +29,9 @@ def post_message(bot, response, chat_id):
 def main():
     env = Env()
     env.read_env()
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
     logger_bot = Bot(token=env('LOG_BOT_TOKEN'))
     admin_chat_id = env('ADMIN_CHAT_ID')
     tg_logger = create_logger(logger_bot, admin_chat_id)
@@ -41,7 +43,7 @@ def main():
                 'Authorization': f"Token {env('DEVMAN_API_TOKEN')}"
             }
 
-            user_chat_id=env('USER_CHAT_ID')
+            user_chat_id = env('USER_CHAT_ID')
             main_bot = Bot(token=env('TELEGRAM_BOT_TOKEN'))
 
             connection_retry = 0
@@ -53,14 +55,22 @@ def main():
                         'timestamp': ''
                     }
                     try:
-                        response = requests.get(devman_long_polling_url, headers=headers, params=params)
+                        response = requests.get(
+                            devman_long_polling_url,
+                            headers=headers,
+                            params=params
+                            )
                         response.raise_for_status()
 
                         work_check_result = response.json()
 
                         if work_check_result['status'] == 'found':
                             params['timestamp'] = work_check_result['new_attempts'][-1]['timestamp']
-                            post_message(main_bot, work_check_result, user_chat_id)
+                            post_message(
+                                main_bot,
+                                work_check_result,
+                                user_chat_id
+                                )
 
                         else:
                             params['timestamp'] = work_check_result['timestamp_to_request']
